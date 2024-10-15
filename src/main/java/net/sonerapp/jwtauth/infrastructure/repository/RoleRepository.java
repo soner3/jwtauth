@@ -7,7 +7,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import net.sonerapp.jwtauth.core.model.AuthRoles;
 import net.sonerapp.jwtauth.core.model.Role;
 
-public interface RoleRepository extends JpaRepository<Role, Long> {
+public interface RoleRepository extends JpaRepository<Role, Integer> {
 
     Optional<Role> findByRolename(AuthRoles rolename);
 

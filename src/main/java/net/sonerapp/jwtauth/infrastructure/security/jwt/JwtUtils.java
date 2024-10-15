@@ -12,9 +12,17 @@ import java.security.spec.InvalidKeySpecException;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
 import java.util.Base64;
+import java.util.Date;
 
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 
+import io.jsonwebtoken.ExpiredJwtException;
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.MalformedJwtException;
+import io.jsonwebtoken.UnsupportedJwtException;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 
 @Component
@@ -22,6 +30,22 @@ import lombok.extern.slf4j.Slf4j;
 public class JwtUtils {
 
     private KeyPair keyPair;
+
+    private final String JWT_HEADER_KEY = "typ";
+    private final String JWT_HEADER_VALUE = "JWT";
+
+    private final String TOKEN_TYPE_KEY = "token_type";
+    private final String REFRESH_TOKEN_TYPE = "refresh";
+    private final String ACCESS_TOKEN_TYPE = "access";
+
+    private final String COOKIE_ACCESS_NAME = "access_jwt";
+    private final String COOKIE_REFRESH_NAME = "refresh_jwt";
+
+    @Value("${jwt.refresh.expiration}")
+    private int refreshTokenExpiration;
+
+    @Value("${jwt.access.expiration}")
+    private int accessTokenExpiration;
 
     public JwtUtils() {
         try {
@@ -62,11 +86,122 @@ public class JwtUtils {
             log.error("Could not read private and public key: {}", e.getMessage());
         } catch (NoSuchAlgorithmException e) {
             log.error("No RSA algorithm exists: {}", e.getMessage());
-
         } catch (InvalidKeySpecException e) {
             log.error("Invalid Key: {}", e.getMessage());
 
         }
+    }
+
+    public String getJwtFromHeader(HttpServletRequest request) {
+        String token = request.getHeader("Authorization");
+        if (token != null && token.startsWith("Bearer ")) {
+            return token.substring(7);
+        } else {
+            return null;
+        }
+    }
+
+    private String generateJwtToken(UserDetails userDetails, int expiration, String tokenType) {
+        return Jwts.builder()
+                .header()
+                .add(JWT_HEADER_KEY, JWT_HEADER_VALUE)
+                .and()
+                .subject(userDetails.getUsername())
+                .claim(TOKEN_TYPE_KEY, tokenType)
+                .issuedAt(new Date())
+                .expiration(new Date(new Date().getTime() + expiration))
+                .signWith(keyPair.getPrivate())
+                .compact();
+    }
+
+    public String generateRefreshToken(UserDetails userDetails) {
+        return generateJwtToken(userDetails, refreshTokenExpiration, REFRESH_TOKEN_TYPE);
+    }
+
+    public String getUsernameFromToken(String token) {
+        return Jwts
+                .parser()
+                .verifyWith(keyPair.getPublic())
+                .build()
+                .parseSignedClaims(token)
+                .getPayload()
+                .getSubject();
+    }
+
+    public boolean validateRefreshToken(String refreshToken) {
+        try {
+            String tokenType = Jwts
+                    .parser()
+                    .verifyWith(keyPair.getPublic())
+                    .build()
+                    .parseSignedClaims(refreshToken)
+                    .getPayload()
+                    .get(TOKEN_TYPE_KEY, String.class);
+            if (tokenType != null && tokenType.equals(REFRESH_TOKEN_TYPE)) {
+                return true;
+            } else {
+                return false;
+            }
+        } catch (MalformedJwtException e) {
+            log.error("Invalid JWT token", e.getMessage());
+        } catch (ExpiredJwtException e) {
+            log.error("Token is Expired", e.getMessage());
+
+        } catch (UnsupportedJwtException e) {
+            log.error("JWT token is not supported", e.getMessage());
+
+        } catch (IllegalArgumentException e) {
+            log.error("JWT Claims string is empty", e.getMessage());
+        }
+
+        return false;
+    }
+
+    public String generateAccessTokenFromRefreshToken(UserDetails userDetails, String refreshToken) {
+        if (refreshToken != null && validateRefreshToken(refreshToken)) {
+            return generateJwtToken(userDetails, accessTokenExpiration, ACCESS_TOKEN_TYPE);
+        } else {
+            return null;
+        }
+
+    }
+
+    public boolean validateAccessToken(String accessToken) {
+        try {
+            String tokenType = Jwts
+                    .parser()
+                    .verifyWith(keyPair.getPublic())
+                    .build()
+                    .parseSignedClaims(accessToken)
+                    .getPayload()
+                    .get(TOKEN_TYPE_KEY, String.class);
+
+            if (tokenType != null && tokenType.equals(ACCESS_TOKEN_TYPE)) {
+                return true;
+            } else {
+                return false;
+            }
+        } catch (MalformedJwtException e) {
+            log.error("Invalid JWT token", e.getMessage());
+        } catch (ExpiredJwtException e) {
+            log.error("Token is Expired", e.getMessage());
+
+        } catch (UnsupportedJwtException e) {
+            log.error("JWT token is not supported", e.getMessage());
+
+        } catch (IllegalArgumentException e) {
+            log.error("JWT Claims string is empty", e.getMessage());
+        }
+
+        return false;
+    }
+
+    public String getCOOKIE_ACCESS_NAME() {
+        return COOKIE_ACCESS_NAME;
+    }
+
+    public String getCOOKIE_REFRESH_NAME() {
+        return COOKIE_REFRESH_NAME;
     }
 
 }
