@@ -1,7 +1,6 @@
 package net.sonerapp.jwtauth.application.service;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 import org.springframework.http.HttpHeaders;
@@ -16,8 +15,9 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
-import net.sonerapp.jwtauth.application.dto.LoginRequestDto;
-import net.sonerapp.jwtauth.application.dto.LoginResponseDto;
+import net.sonerapp.jwtauth.application.dto.AuthController.LoginRequestDto;
+import net.sonerapp.jwtauth.application.dto.AuthController.LoginResponseDto;
+import net.sonerapp.jwtauth.application.dto.AuthController.RefreshResponseDto;
 import net.sonerapp.jwtauth.infrastructure.security.jwt.JwtUtils;
 
 @Service
@@ -39,8 +39,8 @@ public class AuthService {
         } catch (AuthenticationException e) {
             Map<String, Object> map = new HashMap<>();
             map.put("message", "Bad credentials");
-            map.put("status", false);
-            return new ResponseEntity<Map<String, Object>>(map, HttpStatus.NOT_FOUND);
+            map.put("status", HttpStatus.NOT_FOUND);
+            return new ResponseEntity<>(map, HttpStatus.NOT_FOUND);
         }
 
         SecurityContextHolder.getContext().setAuthentication(authentication);
@@ -48,23 +48,35 @@ public class AuthService {
         UserDetails userDetails = (UserDetails) authentication.getPrincipal();
 
         String refreshToken = jwtUtils.generateRefreshToken(userDetails);
-        String accessToken = jwtUtils.generateAccessTokenFromRefreshToken(userDetails, refreshToken);
+        String accessToken = jwtUtils.generateAccessTokenFromRefreshToken(userDetails.getUsername(), refreshToken);
 
-        List<String> roles = userDetails.getAuthorities()
-                .stream()
-                .map(role -> role.getAuthority())
-                .toList();
-
-        HttpHeaders headers = new HttpHeaders();
-        headers.add(HttpHeaders.SET_COOKIE, generateHttpOnlyCookie(jwtUtils.getCOOKIE_ACCESS_NAME(), accessToken,
+        HttpHeaders header = new HttpHeaders();
+        header.add(HttpHeaders.SET_COOKIE, generateHttpOnlyCookie(JwtUtils.COOKIE_ACCESS_NAME, accessToken,
                 jwtUtils.getAccessTokenExpiration() / 1000).toString());
-        headers.add(HttpHeaders.SET_COOKIE, generateHttpOnlyCookie(jwtUtils.getCOOKIE_REFRESH_NAME(), refreshToken,
+        header.add(HttpHeaders.SET_COOKIE, generateHttpOnlyCookie(JwtUtils.COOKIE_REFRESH_NAME, refreshToken,
                 jwtUtils.getRefreshTokenExpiration() / 1000).toString());
 
-        LoginResponseDto loginResponse = new LoginResponseDto(userDetails.getUsername(), accessToken, refreshToken,
-                roles);
+        LoginResponseDto loginResponse = new LoginResponseDto(userDetails.getUsername(), accessToken, refreshToken);
 
-        return ResponseEntity.ok().headers(headers).body(loginResponse);
+        return ResponseEntity.ok().headers(header).body(loginResponse);
+    }
+
+    public ResponseEntity<?> processReAuthorization(String refreshToken) {
+        if (jwtUtils.validateRefreshToken(refreshToken)) {
+            String username = jwtUtils.getUsernameFromToken(refreshToken);
+            String newAccessToken = jwtUtils.generateAccessTokenFromRefreshToken(username, refreshToken);
+
+            HttpHeaders header = new HttpHeaders();
+            header.add(HttpHeaders.SET_COOKIE, generateHttpOnlyCookie(JwtUtils.COOKIE_ACCESS_NAME, newAccessToken,
+                    jwtUtils.getAccessTokenExpiration() / 1000).toString());
+            RefreshResponseDto response = new RefreshResponseDto(newAccessToken);
+            return ResponseEntity.ok().headers(header).body(response);
+        } else {
+            Map<String, Object> errorMessage = new HashMap<>();
+            errorMessage.put("message", "Invalid refresh token");
+            errorMessage.put("status", HttpStatus.UNAUTHORIZED);
+            return new ResponseEntity<>(errorMessage, HttpStatus.UNAUTHORIZED);
+        }
     }
 
     public ResponseCookie generateHttpOnlyCookie(String key, String value, int expiration) {

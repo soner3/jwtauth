@@ -38,8 +38,8 @@ public class JwtUtils {
     private final String REFRESH_TOKEN_TYPE = "refresh";
     private final String ACCESS_TOKEN_TYPE = "access";
 
-    private final String COOKIE_ACCESS_NAME = "access_jwt";
-    private final String COOKIE_REFRESH_NAME = "refresh_jwt";
+    public static final String COOKIE_ACCESS_NAME = "access_jwt";
+    public static final String COOKIE_REFRESH_NAME = "refresh_jwt";
 
     @Value("${jwt.refresh.expiration}")
     private int refreshTokenExpiration;
@@ -101,12 +101,12 @@ public class JwtUtils {
         }
     }
 
-    private String generateJwtToken(UserDetails userDetails, int expiration, String tokenType) {
+    private String generateJwtToken(String username, int expiration, String tokenType) {
         return Jwts.builder()
                 .header()
                 .add(JWT_HEADER_KEY, JWT_HEADER_VALUE)
                 .and()
-                .subject(userDetails.getUsername())
+                .subject(username)
                 .claim(TOKEN_TYPE_KEY, tokenType)
                 .issuedAt(new Date())
                 .expiration(new Date(new Date().getTime() + expiration))
@@ -115,7 +115,7 @@ public class JwtUtils {
     }
 
     public String generateRefreshToken(UserDetails userDetails) {
-        return generateJwtToken(userDetails, refreshTokenExpiration, REFRESH_TOKEN_TYPE);
+        return generateJwtToken(userDetails.getUsername(), refreshTokenExpiration, REFRESH_TOKEN_TYPE);
     }
 
     public String getUsernameFromToken(String token) {
@@ -157,9 +157,9 @@ public class JwtUtils {
         return false;
     }
 
-    public String generateAccessTokenFromRefreshToken(UserDetails userDetails, String refreshToken) {
+    public String generateAccessTokenFromRefreshToken(String username, String refreshToken) {
         if (refreshToken != null && validateRefreshToken(refreshToken)) {
-            return generateJwtToken(userDetails, accessTokenExpiration, ACCESS_TOKEN_TYPE);
+            return generateJwtToken(username, accessTokenExpiration, ACCESS_TOKEN_TYPE);
         } else {
             return null;
         }
@@ -194,14 +194,6 @@ public class JwtUtils {
         }
 
         return false;
-    }
-
-    public String getCOOKIE_ACCESS_NAME() {
-        return COOKIE_ACCESS_NAME;
-    }
-
-    public String getCOOKIE_REFRESH_NAME() {
-        return COOKIE_REFRESH_NAME;
     }
 
     public int getRefreshTokenExpiration() {
