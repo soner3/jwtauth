@@ -1,0 +1,14 @@
+{
+  "properties": [
+    {
+      "name": "jwt.refresh.expiration",
+      "type": "java.lang.String",
+      "description": "Expiration time of the JWT Refresh Token"
+    },
+    {
+      "name": "jwt.access.expiration",
+      "type": "java.lang.String",
+      "description": "Expiration time of the JWT Access Token"
+    }
+  ]
+}
