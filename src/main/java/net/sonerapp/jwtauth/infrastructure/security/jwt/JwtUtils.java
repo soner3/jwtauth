@@ -23,10 +23,12 @@ import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.MalformedJwtException;
 import io.jsonwebtoken.UnsupportedJwtException;
 import jakarta.servlet.http.HttpServletRequest;
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 
 @Component
 @Slf4j
+@Getter
 public class JwtUtils {
 
     private KeyPair keyPair;
@@ -194,14 +196,6 @@ public class JwtUtils {
         }
 
         return false;
-    }
-
-    public int getRefreshTokenExpiration() {
-        return refreshTokenExpiration;
-    }
-
-    public int getAccessTokenExpiration() {
-        return accessTokenExpiration;
     }
 
 }
