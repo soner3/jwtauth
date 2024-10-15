@@ -60,6 +60,8 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             log.error("Could not set authentication for request", e.getMessage());
         }
 
+        filterChain.doFilter(request, response);
+
     }
 
     public String parseJwtToken(HttpServletRequest request) {

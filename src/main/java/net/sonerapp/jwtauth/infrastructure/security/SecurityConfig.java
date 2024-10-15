@@ -32,7 +32,7 @@ public class SecurityConfig {
     @Bean
     SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         return http.authorizeHttpRequests(request -> request
-                .requestMatchers("/api/auth/jwt").permitAll()
+                .requestMatchers("/api/auth/**").permitAll()
                 .anyRequest().authenticated())
                 .exceptionHandling(exception -> exception.authenticationEntryPoint(jwtAuthEntryPoint))
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
