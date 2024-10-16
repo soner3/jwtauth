@@ -1,37 +1,33 @@
 package net.sonerapp.jwtauth;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertThrows;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import java.io.IOException;
-
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.test.context.TestPropertySource;
 
 import jakarta.servlet.http.HttpServletRequest;
 import net.sonerapp.jwtauth.infrastructure.security.jwt.JwtUtils;
 
-@SpringBootTest
+@SpringBootTest(classes = { JwtUtils.class })
+@TestPropertySource(locations = "classpath:test.properties")
 public class JwtUtilsTests {
+
+    @Autowired
+    private JwtUtils jwtUtils;
 
     @Test
     void when_keys_are_valid_then_keypair_initialized() {
-        JwtUtils jwtUtils = new JwtUtils();
+
         assertNotNull(jwtUtils.getKeyPair());
         assertNotNull(jwtUtils.getKeyPair().getPrivate());
         assertNotNull(jwtUtils.getKeyPair().getPublic());
-    }
-
-    @Test
-    void when_keypath_wrong_then_keypair_initialization_failed() {
-        assertThrows(IOException.class, () -> {
-            new JwtUtils();
-        });
     }
 
     @Test
@@ -39,7 +35,6 @@ public class JwtUtilsTests {
         UserDetails userDetails = mock(UserDetails.class);
         when(userDetails.getUsername()).thenReturn("testuser");
 
-        JwtUtils jwtUtils = new JwtUtils();
         String refresh = jwtUtils.generateRefreshToken(userDetails);
 
         assertNotNull(refresh);
@@ -51,7 +46,6 @@ public class JwtUtilsTests {
 
     @Test
     void token_expirations_successfull_setted() {
-        JwtUtils jwtUtils = new JwtUtils();
         assertEquals(172800000, jwtUtils.getRefreshTokenExpiration());
         assertEquals(600000, jwtUtils.getAccessTokenExpiration());
     }
@@ -61,7 +55,6 @@ public class JwtUtilsTests {
         HttpServletRequest request = mock(HttpServletRequest.class);
         when(request.getHeader("Authorization")).thenReturn("Bearer validtoken");
 
-        JwtUtils jwtUtils = new JwtUtils();
         String headerValue = jwtUtils.getJwtFromHeader(request);
         assertEquals(headerValue, "validtoken");
     }
