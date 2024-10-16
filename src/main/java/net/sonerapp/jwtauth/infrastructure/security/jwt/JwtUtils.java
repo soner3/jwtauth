@@ -78,8 +78,7 @@ public class JwtUtils {
 
             if (keyPair != null && keyPair.getPrivate() != null && keyPair.getPublic() != null) {
                 log.info("KeyPair successfully initialized.");
-                log.info("Private Key: {}", keyPair.getPrivate().toString());
-                log.info("Public Key: {}", keyPair.getPublic().toString());
+
             } else {
                 log.error("KeyPair initialization failed.");
             }
