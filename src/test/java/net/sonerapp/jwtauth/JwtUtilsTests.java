@@ -56,7 +56,7 @@ public class JwtUtilsTests {
         when(request.getHeader("Authorization")).thenReturn("Bearer validtoken");
 
         String headerValue = jwtUtils.getJwtFromHeader(request);
-        assertEquals(headerValue, "validtoken");
+        assertEquals("validtoken", headerValue);
     }
 
 }
