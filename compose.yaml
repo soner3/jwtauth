@@ -1,16 +1,25 @@
 services:
   mysql:
-    container_name: jwt_mysql
-    image: "mysql:8.0.39-bookworm"
-    environment:
-      - "MYSQL_DATABASE=mydatabase"
-      - "MYSQL_PASSWORD=secret"
-      - "MYSQL_ROOT_PASSWORD=verysecret"
-      - "MYSQL_USER=myuser"
+    container_name: mysql
+    image: mysql:8.0.39-bookworm
     ports:
-      - 3308:3306
+      - 3306:3306
+    environment:
+      - MYSQL_DATABASE=mysql_db
+      - MYSQL_PASSWORD=password
+      - MYSQL_ROOT_PASSWORD=secretpassword
+      - MYSQL_USER=mysql_user
     volumes:
-      - mysql_data:/var/lib/mysql
+      - data:/var/lib/mysql
+    labels:
+      org.springframework.boot.service-connection: mysql
+
+  mailpit:
+    container_name: mailpit
+    image: axllent/mailpit
+    ports:
+      - 1025:1025
+      - 8025:8025
 
 volumes:
-  mysql_data: {}
+  data: {}

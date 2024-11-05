@@ -6,7 +6,7 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
 import net.sonerapp.jwtauth.core.model.User;
-import net.sonerapp.jwtauth.infrastructure.repository.UserRepository;
+import net.sonerapp.jwtauth.core.repository.UserRepository;
 
 @Service
 public class UserDetailsServiceImpl implements UserDetailsService {
@@ -20,9 +20,8 @@ public class UserDetailsServiceImpl implements UserDetailsService {
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
         User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new UsernameNotFoundException("No User with the given name found"));
+                .orElseThrow(() -> new UsernameNotFoundException("No user found with the given name"));
 
         return UserDetailsImpl.build(user);
     }
-
 }

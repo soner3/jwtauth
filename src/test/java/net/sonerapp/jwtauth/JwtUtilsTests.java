@@ -46,8 +46,8 @@ public class JwtUtilsTests {
 
     @Test
     void token_expirations_successfull_setted() {
-        assertEquals(172800000, jwtUtils.getRefreshTokenExpiration());
-        assertEquals(600000, jwtUtils.getAccessTokenExpiration());
+        assertEquals(172800000, jwtUtils.getRefreshExpiryTime());
+        assertEquals(600000, jwtUtils.getAccessExpiryTime());
     }
 
     @Test

@@ -9,6 +9,16 @@
       "name": "jwt.access.expiration",
       "type": "java.lang.String",
       "description": "Expiration time of the JWT Access Token"
+    },
+    {
+      "name": "frontend.url",
+      "type": "java.lang.String",
+      "description": "The url of the UI"
+    },
+    {
+      "name": "spring.mail.from",
+      "type": "java.lang.String",
+      "description": "Server 'From' Mail"
     }
   ]
 }
